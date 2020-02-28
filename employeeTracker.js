@@ -5,7 +5,7 @@ var mysql = require("mysql");
 var cTable = require("console.table");
 const fs = require("fs");
 const util = require("util");
-const { departmentQuestions,employeeQuestions, roleQuestions, addDeparmentQuestions} = require("./questions")
+const { departmentQuestions, employeeQuestions, roleQuestions, addDeparmentQuestions } = require("./questions")
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -23,9 +23,9 @@ var connection = mysql.createConnection({
 
 // Each key in the manager/intern/engineer array will be a new instance of a specific employee class.
 var data = {
-    manager:[],
-    intern:[],
-    engineer:[]
+    manager: [],
+    intern: [],
+    engineer: []
 }
 
 
@@ -33,6 +33,12 @@ var data = {
 connection.connect(function (err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId + "\n");
+        init(connection);
+
+})
+
+function init(connection){
+
     inquirer.prompt([{
 
         type: "list",
@@ -41,18 +47,32 @@ connection.connect(function (err) {
         choices: ["Department", "Employee", "Role"]
 
     }])
-    
-    .then(answers => {
-        switch(answers.table){
-            case "Department":
-                console.log("Department")
-                break;
-            case "Employee":
-                break;
-            case "Role":
-                break;
-        }
-    })
-   
 
-});
+        .then(answers => {
+            switch (answers.table) {
+                case "Department":
+                    connection.query("SELECT * FROM department", (err, data) => {
+                        console.table(data);
+                        init(connection);
+
+                    })
+
+                    break;
+                case "Employee":
+                    connection.query("SELECT * FROM employees", (err, data) => {
+                        console.table(data);
+                        init(connection);
+
+                    })
+                    break;
+                case "Role":
+                    connection.query("SELECT * FROM employee_role", (err, data) => {
+                        console.table(data);
+                        init(connection);
+                    })
+                    break;
+            }
+
+
+        })
+}
