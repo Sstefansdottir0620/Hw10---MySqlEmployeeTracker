@@ -81,7 +81,7 @@ function addViewUpdate(category){
                 break;
 
               case `Update ${category}`:
-              update(category);
+                update(category);
       }})
     };
 
@@ -169,20 +169,34 @@ switch (category) {
 function update(category) {
   switch(category) {
     case "Department":
-      inquirer.prompt({
-        type: "input",
-        name: "department_name",
-        message: "Insert the department name"
-      }).then(answers => {
-        connection.query("INSERT INTO department SET ?",
-      {
-        department_name: answers.department_name
-      },
-  
-      (err, data) => {
+      let choiceList = [];
+      connection.query("SELECT department_name FROM department", (err, data) => {
         if (err) throw err;
+        choiceList = data.map(item => {
+          return item.department_name;
+        })
+        inquirer.prompt({
+          type: "list",
+          name: "updateDepartment",
+          message: "Which department would you like to update",
+          choices: choiceList
+        }).then(choice1 => {
+          inquirer.prompt({
+            type: "input",
+            name: "department_name",
+            message: "Insert the department name"
+          }).then(choice2 => {
+            connection.query(`UPDATE department SET department_name = "${choice2.department_name}" WHERE department_name = "${choice1.updateDepartment}"`,
+          (err, data) => {
+            if (err) throw err;
+          })
+        })
       })
-    })
+
+      
+        
+      })
+    
 
     break;
   case "Employee":
