@@ -64,7 +64,7 @@ function addViewUpdate(category){
       type: "list",
       name: "table",
       message: "What would you like to do?",
-      choices: [`Add ${category}`, `View ${category}`, `Update ${category}`]
+      choices: [`Add ${category}`, `View ${category}`, `Update ${category}`, "Choose another category", "Exit"]
 
   }])
 
@@ -81,7 +81,30 @@ function addViewUpdate(category){
                 break;
 
               case `Update ${category}`:
-                update(category);
+                switch (category){
+                  case "Department":
+                  updateDepartment(category);
+
+                  break; 
+                
+                  case "Employee":
+                  updateEmployee(category);
+                  break;
+                  
+                  case "Role":
+                  updateRole(category);
+                  break;
+                }  
+                
+                break;
+
+              case "Choose another category":
+                  init();
+
+                break;
+
+              case "Exit":
+                    console.log("Good bye!!");
       }})
     };
 
@@ -101,6 +124,7 @@ switch(category) {
     (err, data) => {
       if (err) throw err;
     })
+    view(category);
   })
 
   break;
@@ -118,6 +142,7 @@ switch(category) {
     (err, data) => {
       if (err) throw err;
     })
+    addViewUpdate(category);
   })
 
 
@@ -135,12 +160,11 @@ switch(category) {
     (err, data) => {
       if (err) throw err;
     })
+    addViewUpdate(category);
   })
 
-  
-}};
-
-
+}
+};
 
 
 function view(category){
@@ -148,185 +172,154 @@ switch (category) {
   case "Department":
       connection.query("SELECT * FROM department", (err, data) => {
           console.table(data);
-
+          addViewUpdate(category);
       })
 
       break;
   case "Employee":
       connection.query("SELECT * FROM employees", (err, data) => {
           console.table(data);
-          
+          addViewUpdate(category);
       })
       break;
   case "Role":
       connection.query("SELECT * FROM employee_role", (err, data) => {
           console.table(data);
-          
+          addViewUpdate(category);
       })
       break;
-}};
+}
 
-function update(category) {
-  switch(category) {
-    case "Department":
-      let choiceList = [];
-      connection.query("SELECT department_name FROM department", (err, data) => {
-        if (err) throw err;
-        choiceList = data.map(item => {
-          return item.department_name;
-        })
+
+
+};
+
+function updateDepartment(category){
+  connection.query("SELECT department_name FROM department", (err, data) => {
+    if (err) throw err;
+    let choiceList = data.map(item => {
+      return item.department_name;
+    })
+    inquirer.prompt({
+      type: "list",
+      name: "updateDepartment",
+      message: "Which department would you like to update",
+      choices: choiceList
+    }).then(choice1 => {
         inquirer.prompt({
-          type: "list",
-          name: "updateDepartment",
-          message: "Which department would you like to update",
-          choices: choiceList
-        }).then(choice1 => {
-          inquirer.prompt({
-            type: "input",
-            name: "department_name",
-            message: "Insert the department name"
-          }).then(choice2 => {
-            connection.query(`UPDATE department SET department_name = "${choice2.department_name}" WHERE department_name = "${choice1.updateDepartment}"`,
+        type: "list",
+        name: "updateChoices",
+        message: "Would you like to delete or edit this department?",
+        choices:["delete", "change"]
+      }).then(choice2 => {
+        switch (choice2.updateChoices) {
+          case "delete":
+            connection.query(`DELETE FROM department WHERE department_name = "${choice1.updateDepartment}"`,
+            (err, data) => {
+              if (err) throw err;
+            })
+            view(category);
+            break;
+
+          case "change":
+            inquirer.prompt({
+              type: "input",
+              name: "newDepartmentName",
+              message: "What would you like to name this department?"
+            }).then(choice3 => {
+              connection.query(`UPDATE department SET department_name = "${choice3.newDepartmentName}" WHERE department_name = "${choice1.updateDepartment}"`,
+            (err, data) => {
+              if (err) throw err;
+            })
+            view(category);
+            })
+            break;
+        }   
+    })
+  })
+})
+
+
+};
+
+function updateEmployee(category){
+  let firstName, lastName;
+  connection.query("SELECT first_name, last_name FROM employees", (err, data) => {
+    if (err) throw err;
+    let choiceList = data.map(item => {
+      return `${item.first_name} ${item.last_name}` ;
+    })
+    inquirer.prompt({
+    type: "list",
+    name: "updateEmployees",
+    message: "Which employee would you like to update",
+    choices: choiceList
+    })
+    .then(choice1 => {
+      let nameArray = choice1.updateEmployees.split(" "); // "mry sdd asdfsd sdfs" => ["mry", "sdd"...]
+      firstName = nameArray[0], lastName = nameArray[1];
+      inquirer.prompt({
+      type: "list",
+      name: "updateChoices",
+      message: "Would you like to delete or edit the employee?",
+      choices:["delete", "edit"]
+    })
+    .then(choice2 => {
+      switch (choice2.updateChoices) {
+        case "delete":
+          connection.query(`DELETE FROM employees WHERE (first_name = "${firstName}" AND last_name = "${lastName}")`,
           (err, data) => {
             if (err) throw err;
+            view(category);
           })
-        })
-      })
+          
+          break;
 
-      
-        
-      })
-    
+        case "edit":
+          inquirer.prompt({
+            type: "list",
+            name: "editList",
+            message: "What would you like to edit",
+            choices:["edit role-ID", "edit manager-ID", "edit first-name", "edit last-name"]
+          })
+          .then(choice3 => {
+            switch(choice3.editList){
+              case "edit role-ID":
+                inquirer.prompt({
+                  type: "input",
+                  name: "editRoleID",
+                  message: "Insert the new Role-ID"
+                })
+                .then(newRoleID => {
+                  connection.query(`UPDATE employees SET role_id = "${newRoleID.editRoleID}" WHERE (first_name = "${firstName}" AND last_name = "${lastName}")`,
+                  (err, data) => {
+                  if (err) throw err;
+                  view(category);
+                })})
+              break;
 
-    break;
-  case "Employee":
-    inquirer.prompt(addEmployeeQuestions)
-    .then(answers => {
-      connection.query("INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
-    [
-      answers.first_name,
-      answers.last_name,
-      answers.role_id,
-      answers.manager_id
-    ],
+              case "edit manager-ID":
+                inquirer.prompt({
+                  type:"input",
+                  name:"editManagerID",
+                  message: "Insert the new Mnager-ID"
+                })
+                .then(newManagerID => {
+                  connection.query(`UPDATE employees SET manager_id = "${newManagerID.editManagerID}" WHERE (first_name = "${firstName}" AND last_name = "${lastName}")`,
+                  (err, data) => {
+                  if (err) throw err;
+                  view(category);
+                })})
+              break;
 
-    (err, data) => {
-      if (err) throw err;
+                }})
+            }
+          })
+      }
     })
-  })
+  }
+  )
+})
+}
 
-
-  break;
-  case "Role":
-    inquirer.prompt(roleQuestions)
-    .then(answers => {
-      connection.query("INSERT INTO employee_role (title, salary, department_id) VALUES (?, ?, ?)",
-    [
-      answers.title,
-      answers.salary,
-      answers.depatment_id,
-    ],
-
-    (err, data) => {
-      if (err) throw err;
-    })
-  })
-
-  
-}};
-
-// function queryAllSongs() {
-//     connection.query("SELECT * FROM songs", function(err, res) {
-//       if (err) throw err;
-//       for (var i = 0; i < res.length; i++) {
-//         console.log(res[i].id + " | " + res[i].title + " | " + res[i].artist + " | " + res[i].genre);
-//       }
-//       console.log("-----------------------------------");
-//     });
-//   }
-  
-//   function queryDanceSongs() {
-//     var query = connection.query("SELECT * FROM songs WHERE genre=?", ["Dance"], function(err, res) {
-//       if (err) throw err;
-//       for (var i = 0; i < res.length; i++) {
-//         console.log(res[i].id + " | " + res[i].title + " | " + res[i].artist + " | " + res[i].genre);
-//       }
-//     });
-  
-//     // logs the actual query being run
-//     console.log(query.sql);
-//     connection.end();
-//   }
-
-
-// function createSong() {
-//     console.log("Inserting a new songs...\n");
-//     var query = connection.query(
-//       "INSERT INTO songs SET ?",
-//       {
-//         genre: "pop",
-//         title: "I want to dance with somebody",
-//         artist: "Witney Houston"
-//       },
-//       function(err, res) {
-//         if (err) throw err;
-//         console.log(res.affectedRows + " songs inserted!\n");
-//         // Call updateProduct AFTER the INSERT completes
-//         updateSong();
-//       }
-//     );
-  
-//     // logs the actual query being run
-//     console.log(query.sql);
-//   }
-  
-//   function updateProduct() {
-//     console.log("Updating all pop quantities...\n");
-//     var query = connection.query(
-//       "UPDATE songs SET ? WHERE ?",
-//       [
-//         {
-//           artist: "Witney Houston"
-//         },
-//         {
-//           genre: "pop"
-//         }
-//       ],
-//       function(err, res) {
-//         if (err) throw err;
-//         console.log(res.affectedRows + " songs updated!\n");
-//         // Call deleteProduct AFTER the UPDATE completes
-//         deleteSong();
-//       }
-//     );
-  
-//     // logs the actual query being run
-//     console.log(query.sql);
-//   }
-  
-//   function deleteSong() {
-//     console.log("Deleting all pop...\n");
-//     connection.query(
-//       "DELETE FROM songs WHERE genre?",
-//       {
-//         artist: "Asgeir Trausti"
-//       },
-//       function(err, res) {
-//         if (err) throw err;
-//         console.log(res.affectedRows + " songs deleted!\n");
-//         // Call readPSong AFTER the DELETE completes
-//         readSong();
-//       }
-//     );
-//   }
-  
-//   function readProducts() {
-//     console.log("Selecting all songs...\n");
-//     connection.query("SELECT * FROM songs", function(err, res) {
-//       if (err) throw err;
-//       // Log all results of the SELECT statement
-//       console.table(res);
-//       connection.end();
-//     });
-//   }
   
