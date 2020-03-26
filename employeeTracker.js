@@ -312,14 +312,37 @@ function updateEmployee(category){
                 })})
               break;
 
+              case "first-name":
+                inquirer.prompt({
+                  type: "input",
+                  name: "editFirstName",
+                  message: "Insert new first-name"
+                })
+                .then(newFirstName => {
+                  connection.query(`UPDATE employees SET first_name = "${newFirstName.editFirstName}" WHERE (first_name = "${firstName}")`,
+                  (err, data) => {
+                    if (err) throw err;
+                    view(category);
+                })})
+                break;
+
+                case "las-name":
+                inquirer.prompt({
+                  type: "input",
+                  name: "editLastName",
+                  message: "Insert new last-name"
+                })
+                .then(newLastName => {
+                  connection.query(`UPDATE employees SET first_name = "${newLastName.editlastName}" WHERE (first_name = "${lastName}")`,
+                  (err, data) => {
+                    if (err) throw err;
+                    view(category);
+                })})
+                break;
+
                 }})
             }
           })
-      }
-    })
-  }
-  )
-})
+      })
+  })
 }
-
-  
