@@ -22,11 +22,11 @@ var connection = mysql.createConnection({
 });
 
 // Each key in the manager/intern/engineer array will be a new instance of a specific employee class.
-var data = {
-    manager: [],
-    intern: [],
-    engineer: []
-}
+// var data = {
+//     manager: [],
+//     intern: [],
+//     engineer: []
+// }
 
 
 
@@ -51,11 +51,10 @@ function init(){
 
         .then(answers => {
             
-            
-            addViewUpdate(answers.table);
+          addViewUpdate(answers.table);
 
         });
-}
+};
 
 function addViewUpdate(category){
 
@@ -345,4 +344,113 @@ function updateEmployee(category){
           })
       })
   })
+};
+
+function updateRole(category){
+
+  connection.query("SELECT first_name, last_name FROM employees", (err, data) => {
+    if (err) throw err;
+    let choiceList = data.map(item => {
+      return `${item.first_name} ${item.last_name}` ;
+    })
+    inquirer.prompt({
+    type: "list",
+    name: "updateEmployees",
+    message: "Which employee would you like to update",
+    choices: choiceList
+    })
+    .then(choice1 => {
+      let nameArray = choice1.updateEmployees.split(" "); // "mry sdd asdfsd sdfs" => ["mry", "sdd"...]
+      firstName = nameArray[0], lastName = nameArray[1];
+      inquirer.prompt({
+      type: "list",
+      name: "updateChoices",
+      message: "Would you like to delete or edit the employee?",
+      choices:["delete", "edit"]
+    })
+    .then(choice2 => {
+      switch (choice2.updateChoices) {
+        case "delete":
+          connection.query(`DELETE FROM employees WHERE (first_name = "${firstName}" AND last_name = "${lastName}")`,
+          (err, data) => {
+            if (err) throw err;
+            view(category);
+          })
+          
+          break;
+
+        case "edit":
+          inquirer.prompt({
+            type: "list",
+            name: "editList",
+            message: "What would you like to edit",
+            choices:["edit role-ID", "edit manager-ID", "edit first-name", "edit last-name"]
+          })
+          .then(choice3 => {
+            switch(choice3.editList){
+              case "edit role-ID":
+                inquirer.prompt({
+                  type: "input",
+                  name: "editRoleID",
+                  message: "Insert the new Role-ID"
+                })
+                .then(newRoleID => {
+                  connection.query(`UPDATE employees SET role_id = "${newRoleID.editRoleID}" WHERE (first_name = "${firstName}" AND last_name = "${lastName}")`,
+                  (err, data) => {
+                  if (err) throw err;
+                  view(category);
+                })})
+              break;
+
+              case "edit manager-ID":
+                inquirer.prompt({
+                  type:"input",
+                  name:"editManagerID",
+                  message: "Insert the new Mnager-ID"
+                })
+                .then(newManagerID => {
+                  connection.query(`UPDATE employees SET manager_id = "${newManagerID.editManagerID}" WHERE (first_name = "${firstName}" AND last_name = "${lastName}")`,
+                  (err, data) => {
+                  if (err) throw err;
+                  view(category);
+                })})
+              break;
+
+              case "first-name":
+                inquirer.prompt({
+                  type: "input",
+                  name: "editFirstName",
+                  message: "Insert new first-name"
+                })
+                .then(newFirstName => {
+                  connection.query(`UPDATE employees SET first_name = "${newFirstName.editFirstName}" WHERE (first_name = "${firstName}")`,
+                  (err, data) => {
+                    if (err) throw err;
+                    view(category);
+                })})
+                break;
+
+                case "las-name":
+                inquirer.prompt({
+                  type: "input",
+                  name: "editLastName",
+                  message: "Insert new last-name"
+                })
+                .then(newLastName => {
+                  connection.query(`UPDATE employees SET first_name = "${newLastName.editlastName}" WHERE (first_name = "${lastName}")`,
+                  (err, data) => {
+                    if (err) throw err;
+                    view(category);
+                })})
+                break;
+
+                }})
+            }
+          })
+      })
+  })
+
+
+
+
 }
